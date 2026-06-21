@@ -3,76 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eco-Insight | Carbon Footprint Tracker</title>
-    <meta name="description" content="A smart, dynamic assistant to help you track and reduce your carbon footprint.">
+    <title>Eco-Insight V2 | Real-World Tracker</title>
+    <meta name="description" content="A real-world, dynamic carbon footprint tracker with multi-region support and visual analytics.">
     <link rel="stylesheet" href="style.css">
-    <!-- Using Google Fonts for clean, modern typography -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Premium Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Chart.js for Visual Analytics (CDN to keep repo size tiny) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="container">
-        <!-- Dashboard Panel -->
-        <aside class="dashboard" aria-label="Footprint Dashboard">
-            <header>
-                <h1>Eco-Insight</h1>
-                <p>Your Carbon Footprint Tracker</p>
-            </header>
-            
-            <div class="footprint-display">
-                <div class="circle" aria-live="polite">
-                    <span id="total-co2">0</span>
-                    <small>kg CO₂</small>
-                </div>
-            </div>
-
-            <div class="stats" aria-label="Emission Categories">
-                <div class="stat-item">
-                    <span>Transport</span>
-                    <span id="stat-transport">0 kg</span>
-                </div>
-                <div class="stat-item">
-                    <span>Food</span>
-                    <span id="stat-food">0 kg</span>
-                </div>
-                <div class="stat-item">
-                    <span>Energy</span>
-                    <span id="stat-energy">0 kg</span>
-                </div>
-            </div>
-
-            <button id="reset-btn" class="secondary-btn" aria-label="Reset all tracking data">Reset Data</button>
-        </aside>
-
-        <!-- Assistant Panel -->
-        <main class="assistant" aria-label="Smart Assistant Chat">
-            <div class="chat-header">
-                <h2>Assistant</h2>
-                <span class="status-indicator" title="Assistant is online"></span>
+    <div class="app-container">
+        
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="brand">
+                <div class="logo">🌍</div>
+                <h2>Eco-Insight</h2>
             </div>
             
-            <div class="chat-history" id="chat-history" aria-live="polite">
-                <div class="message bot-msg">
-                    Hello! I'm your Eco-Insight Assistant. I can help you track your daily activities and calculate your carbon footprint. Try telling me what you did today! (e.g., "I drove 15 miles", or click an action below).
+            <ul class="nav-links">
+                <li class="active" data-target="dashboard-view">
+                    <span class="icon">📊</span> Dashboard
+                </li>
+                <li data-target="assistant-view">
+                    <span class="icon">💬</span> Assistant
+                </li>
+                <li data-target="analytics-view">
+                    <span class="icon">📈</span> Analytics
+                </li>
+                <li data-target="settings-view">
+                    <span class="icon">⚙️</span> Settings
+                </li>
+            </ul>
+
+            <!-- Gamification Profile -->
+            <div class="user-badge">
+                <span id="rank-title">Eco Beginner</span>
+                <div class="progress-container">
+                    <div class="progress-fill" id="rank-progress"></div>
                 </div>
+                <small><span id="eco-points">0</span> pts</small>
             </div>
+        </nav>
 
-            <div class="quick-actions" aria-label="Quick Log Actions">
-                <button class="action-btn" data-action="commute_car">🚗 Drove Car (10 miles)</button>
-                <button class="action-btn" data-action="commute_bus">🚌 Took Bus (10 miles)</button>
-                <button class="action-btn" data-action="meal_meat">🥩 Meat Meal</button>
-                <button class="action-btn" data-action="meal_vegan">🥗 Vegan Meal</button>
-                <button class="action-btn" data-action="energy_kwh">💡 5 kWh Electricity</button>
-            </div>
+        <!-- Main Content Area -->
+        <main class="content-area">
+            
+            <!-- Dashboard View -->
+            <section id="dashboard-view" class="view active-view">
+                <header class="view-header">
+                    <h1>Overview</h1>
+                    <p>Your real-time carbon footprint status.</p>
+                </header>
+                
+                <div class="dashboard-grid">
+                    <div class="hero-card">
+                        <div class="main-ring">
+                            <canvas id="footprintDoughnut" width="220" height="220"></canvas>
+                            <div class="ring-center">
+                                <h2 id="total-co2">0.0</h2>
+                                <span>kg CO₂</span>
+                            </div>
+                        </div>
+                    </div>
 
-            <form class="chat-input-area" id="chat-form">
-                <label for="user-input" class="sr-only" style="display:none;">Type an activity</label>
-                <input type="text" id="user-input" placeholder="Type an activity or ask for tips..." autocomplete="off" required>
-                <button type="submit" id="send-btn" aria-label="Send Message">Send</button>
-            </form>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon transport-icon">🚗</div>
+                            <div class="stat-info">
+                                <h3>Transport</h3>
+                                <p id="stat-transport">0.0 kg</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon food-icon">🍔</div>
+                            <div class="stat-info">
+                                <h3>Diet</h3>
+                                <p id="stat-food">0.0 kg</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon energy-icon">⚡</div>
+                            <div class="stat-info">
+                                <h3>Energy</h3>
+                                <p id="stat-energy">0.0 kg</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-activity">
+                    <h3>Recent Logged Activities</h3>
+                    <ul id="activity-list">
+                        <li class="empty-state">No activities logged yet. Head to the Assistant to get started!</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Assistant View -->
+            <section id="assistant-view" class="view">
+                <header class="view-header">
+                    <h1>Smart Assistant</h1>
+                    <p>Log activities via quick actions or natural language.</p>
+                </header>
+                
+                <div class="assistant-container">
+                    <div class="chat-history" id="chat-history">
+                        <div class="message bot-msg">
+                            Hello! I'm your V2 Assistant. I use your configured Region and Primary Transport settings to ensure 100% accurate real-world calculations. What did you do today?
+                        </div>
+                    </div>
+                    
+                    <!-- V2 Quick Action Wizard -->
+                    <div class="quick-actions">
+                        <button class="action-btn" data-type="transport" data-action="car_gas_average" data-amount="10">🚗 Drove Gas Car (10m)</button>
+                        <button class="action-btn" data-type="transport" data-action="car_ev" data-amount="10">⚡ Drove EV (10m)</button>
+                        <button class="action-btn" data-type="transport" data-action="bus" data-amount="10">🚌 Took Bus (10m)</button>
+                        <button class="action-btn" data-type="diet" data-action="meat_heavy" data-amount="1">🥩 Meat Meal</button>
+                        <button class="action-btn" data-type="diet" data-action="vegan" data-amount="1">🥗 Vegan Meal</button>
+                        <button class="action-btn" data-type="energy" data-action="electricity" data-amount="5">💡 5 kWh Grid Energy</button>
+                    </div>
+
+                    <form id="chat-form" class="chat-input-area">
+                        <input type="text" id="user-input" placeholder="E.g., 'I drove my SUV 20 miles'" required autocomplete="off">
+                        <button type="submit" id="send-btn">Send</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Analytics View -->
+            <section id="analytics-view" class="view">
+                <header class="view-header">
+                    <h1>Visual Analytics</h1>
+                    <p>Dive deep into your emission trends over time.</p>
+                </header>
+                
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+
+                <div class="insights-panel">
+                    <h3>💡 AI Insight Engine</h3>
+                    <p id="ai-insight-text">Keep logging data! The AI needs at least 3 activities to generate personalized trend analysis and reduction strategies.</p>
+                </div>
+            </section>
+
+            <!-- Settings View -->
+            <section id="settings-view" class="view">
+                <header class="view-header">
+                    <h1>Localization Settings</h1>
+                    <p>Tune the engine to your physical environment for accurate math.</p>
+                </header>
+                
+                <form id="settings-form" class="settings-card">
+                    <div class="form-group">
+                        <label for="region-select">Geographic Region (Calculates Grid Emission Severity)</label>
+                        <select id="region-select">
+                            <option value="US">United States (0.385 kg/kWh)</option>
+                            <option value="EU">European Union (0.231 kg/kWh)</option>
+                            <option value="IN">India (0.708 kg/kWh)</option>
+                            <option value="GLOBAL">Global Average</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="primary-transport">Primary Transport (Used for text parsing defaults)</label>
+                        <select id="primary-transport">
+                            <option value="car_gas_average">Average Gas Car</option>
+                            <option value="car_suv">SUV (Gas)</option>
+                            <option value="car_ev">Electric Vehicle</option>
+                        </select>
+                    </div>
+                    
+                    <div class="settings-actions">
+                        <button type="button" id="save-settings-btn" class="primary-btn">Save Configuration</button>
+                    </div>
+                </form>
+
+                <div class="danger-zone">
+                    <h3>Danger Zone</h3>
+                    <p>This will permanently erase all your historical footprint data and reset your Eco-Points.</p>
+                    <button type="button" id="hard-reset-btn" class="danger-btn">Erase All Data</button>
+                </div>
+            </section>
+
         </main>
     </div>
-    
-    <!-- Core logic script -->
+
+    <script src="data.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

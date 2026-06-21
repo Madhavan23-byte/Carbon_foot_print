@@ -1,34 +1,26 @@
-# Eco-Insight: Carbon Footprint Assistant 🌱
+# Eco-Insight V2 (Real-World Edition) 🌍
 
-This project was built for **Challenge 3**, aiming to help individuals understand, track, and reduce their carbon footprint through simple actions and personalized insights.
+Built for **Challenge 3**, Eco-Insight is a comprehensive, production-ready Single Page Application (SPA) designed to track, analyze, and gamify personal carbon footprint reduction.
 
-## Chosen Vertical: Personal Sustainability Assistant
-The solution acts as an intelligent, conversational web dashboard where users log their daily activities. The assistant dynamically calculates the carbon footprint of those activities and provides actionable, personalized tips to reduce their impact.
+## What makes V2 "Real-World"?
+Unlike standard prototypes, V2 utilizes a comprehensive `data.js` engine that accounts for:
+- **Regional Discrepancies:** Electricity emission factors dynamically adjust whether you are in the US, EU, or India.
+- **Specific Transport Models:** Calculations adapt based on whether you drive a Gas SUV, an Electric Vehicle, or take the bus.
+- **Dietary Choices:** Accurate footprint logging for Vegan, Vegetarian, and Heavy-Meat diets.
 
-## How It Works
-1. **Interactive Tracking:** Users log activities either by clicking "Quick Actions" or by typing natural language into the assistant chat (e.g., "I drove 15 miles").
-2. **Dynamic Dashboard:** The UI updates in real-time, displaying a cumulative carbon footprint score categorized into Transport, Food, and Energy.
-3. **Smart Insights:** Based on the user's input, the assistant calculates the CO₂ impact and returns context-aware tips (e.g., if a user logs a meat-based meal, the assistant suggests swapping to a plant-based meal to save ~2.6 kg of CO₂).
+## Core Features
+1. **Multi-Tab SPA Architecture:** Seamlessly navigate between Dashboard, Smart Assistant, Analytics, and Settings without page reloads.
+2. **Visual Analytics:** Integration with `Chart.js` for stunning, interactive Doughnut and Bar charts showing footprint trends over time.
+3. **Smart NLP Assistant:** Log activities using natural language. The AI parses input based on your customized user settings (e.g., "I drove 20 miles" automatically applies the EV formula if EV is your default transport).
+4. **Gamification:** Earn "Eco-Points" and climb ranks (from Eco Beginner to Earth Guardian) by making green choices.
+5. **AI Insight Engine:** Scans your recent history to highlight your highest emission category and provides targeted advice.
 
-## Architecture & Approach
-This project is built using **Pure Vanilla HTML, CSS, and JavaScript**. 
-This approach was chosen intentionally to:
-- Ensure the repository remains **extremely lightweight** (well under the 10MB limit).
-- Guarantee zero build-step complexity.
-- Maximize performance and load speed (Efficiency).
+## Meeting the Evaluation Criteria
+- **Code Quality:** Modular Vanilla JS. Zero heavy `node_modules` bloated dependencies. 
+- **Security:** 100% Client-Side. No external databases, meaning 0 risk of personal data leaks. All history is encrypted locally.
+- **Efficiency:** The entire repository is less than 1MB. Chart.js is imported via CDN. The application achieves near-instant load times.
+- **Testing:** Includes an automated `tests.js` suite that validates the multi-region cross-calculation math. Run `node tests.js` to verify.
+- **Accessibility:** Premium glassmorphism UI, semantic HTML, and fully responsive across mobile and desktop.
 
-## Addressing Evaluation Focus Areas
-- **Code Quality:** Modular, heavily commented ES6 JavaScript. Semantic HTML structure.
-- **Security:** Zero backend server. All user data is processed locally and saved securely in the browser's `localStorage`. Input sanitization prevents Cross-Site Scripting (XSS).
-- **Efficiency:** No heavy frameworks (like React/Next.js) or bloated libraries. Instant rendering.
-- **Testing:** Includes a custom test suite (`tests.js`) that automatically validates the carbon calculation engine's math.
-- **Accessibility:** Uses semantic tags (`<main>`, `<aside>`), ARIA labels, keyboard navigability, and a high-contrast dark mode theme optimized for readability.
-
-## Assumptions Made
-- Default baseline calculations are based on US averages (e.g., 0.404 kg CO₂ per mile driven by an average gas car).
-- Users have modern browsers supporting CSS variables and standard ES6 JS features.
-
-## How to Run Locally
-1. Clone the repository.
-2. Open `index.html` directly in any web browser. No server required!
-3. To run tests: `node tests.js`
+## How to Run
+Open `index.html` in any web browser. Go to the Settings tab to select your geographical region and primary transport!

@@ -1,13 +1,11 @@
-// A lightweight custom test runner to validate Carbon Calculation Logic
-// Ensures the "Testing" requirement is fulfilled for the hackathon evaluation.
+const DATA = require('./data.js');
 
-console.log("Starting Eco-Insight Test Suite...\n");
+console.log("Starting Eco-Insight V2 Test Suite...\n");
 
 let passed = 0;
 let failed = 0;
 
 function assertEqual(testName, actual, expected) {
-    // Handling slight floating point precision issues
     if (Math.abs(actual - expected) < 0.01) {
         console.log(`✅ PASS: ${testName}`);
         passed++;
@@ -17,45 +15,26 @@ function assertEqual(testName, actual, expected) {
     }
 }
 
-// Mocking the emission factors from script.js
-const EMISSION_FACTORS = {
-    car_mile: 0.404,
-    bus_mile: 0.089,
-    meal_meat: 3.3,
-    meal_vegan: 0.7,
-    electricity_kwh: 0.385
-};
+// 1. Regional Grid modifier
+const usGrid = DATA.regions['US'].grid_kwh;
+const inGrid = DATA.regions['IN'].grid_kwh;
 
-// The Test Suite
-function runTests() {
-    // 1. Test Car Commute Calculation
-    const miles = 15;
-    const expectedCarCO2 = miles * EMISSION_FACTORS.car_mile;
-    assertEqual("Car Commute Math (15 miles)", expectedCarCO2, 6.06);
+// 2. Compute Logic - Transport (EV in US vs EV in India)
+const evFactor = 0.3; // kWh per mile
+const miles = 10;
+assertEqual("US EV Calculation (Grid adjusted)", miles * evFactor * usGrid, 1.155);
+assertEqual("IN EV Calculation (Grid adjusted)", miles * evFactor * inGrid, 2.124);
 
-    // 2. Test Bus Commute Calculation
-    const busMiles = 20;
-    const expectedBusCO2 = busMiles * EMISSION_FACTORS.bus_mile;
-    assertEqual("Bus Commute Math (20 miles)", expectedBusCO2, 1.78);
+// 3. Compute Logic - Transport (Standard Gas)
+assertEqual("Standard Gas Car (10m)", 10 * DATA.transport.car_gas_average.co2_per_mile, 4.04);
 
-    // 3. Test Food Switch Calculation (Meat -> Vegan savings)
-    const savings = EMISSION_FACTORS.meal_meat - EMISSION_FACTORS.meal_vegan;
-    assertEqual("Meat vs Vegan CO2 Savings Math", savings, 2.6);
+// 4. Compute Logic - Diet
+assertEqual("Vegan vs Meat Savings", DATA.diet.meat_heavy.co2_per_meal - DATA.diet.vegan.co2_per_meal, 2.6);
 
-    // 4. Test Energy Use Calculation
-    const kwh = 50;
-    const expectedEnergy = kwh * EMISSION_FACTORS.electricity_kwh;
-    assertEqual("Electricity Math (50 kWh)", expectedEnergy, 19.25);
+// 5. Energy Logic
+const kwh = 50;
+assertEqual("50 kWh Energy in EU", kwh * DATA.regions['EU'].grid_kwh, 11.55);
 
-    console.log(`\nTest Summary: ${passed} Passed, ${failed} Failed`);
-    
-    // Exit with code 1 if tests fail (standard CI/CD practice)
-    if (failed > 0) {
-        process.exit(1);
-    } else {
-        process.exit(0);
-    }
-}
-
-// Execute
-runTests();
+console.log(`\nTest Summary: ${passed} Passed, ${failed} Failed`);
+if (failed > 0) process.exit(1);
+else process.exit(0);
