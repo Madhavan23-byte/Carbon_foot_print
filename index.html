@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco-Insight | Carbon Footprint Tracker</title>
+    <meta name="description" content="A smart, dynamic assistant to help you track and reduce your carbon footprint.">
+    <link rel="stylesheet" href="style.css">
+    <!-- Using Google Fonts for clean, modern typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Dashboard Panel -->
+        <aside class="dashboard" aria-label="Footprint Dashboard">
+            <header>
+                <h1>Eco-Insight</h1>
+                <p>Your Carbon Footprint Tracker</p>
+            </header>
+            
+            <div class="footprint-display">
+                <div class="circle" aria-live="polite">
+                    <span id="total-co2">0</span>
+                    <small>kg CO₂</small>
+                </div>
+            </div>
+
+            <div class="stats" aria-label="Emission Categories">
+                <div class="stat-item">
+                    <span>Transport</span>
+                    <span id="stat-transport">0 kg</span>
+                </div>
+                <div class="stat-item">
+                    <span>Food</span>
+                    <span id="stat-food">0 kg</span>
+                </div>
+                <div class="stat-item">
+                    <span>Energy</span>
+                    <span id="stat-energy">0 kg</span>
+                </div>
+            </div>
+
+            <button id="reset-btn" class="secondary-btn" aria-label="Reset all tracking data">Reset Data</button>
+        </aside>
+
+        <!-- Assistant Panel -->
+        <main class="assistant" aria-label="Smart Assistant Chat">
+            <div class="chat-header">
+                <h2>Assistant</h2>
+                <span class="status-indicator" title="Assistant is online"></span>
+            </div>
+            
+            <div class="chat-history" id="chat-history" aria-live="polite">
+                <div class="message bot-msg">
+                    Hello! I'm your Eco-Insight Assistant. I can help you track your daily activities and calculate your carbon footprint. Try telling me what you did today! (e.g., "I drove 15 miles", or click an action below).
+                </div>
+            </div>
+
+            <div class="quick-actions" aria-label="Quick Log Actions">
+                <button class="action-btn" data-action="commute_car">🚗 Drove Car (10 miles)</button>
+                <button class="action-btn" data-action="commute_bus">🚌 Took Bus (10 miles)</button>
+                <button class="action-btn" data-action="meal_meat">🥩 Meat Meal</button>
+                <button class="action-btn" data-action="meal_vegan">🥗 Vegan Meal</button>
+                <button class="action-btn" data-action="energy_kwh">💡 5 kWh Electricity</button>
+            </div>
+
+            <form class="chat-input-area" id="chat-form">
+                <label for="user-input" class="sr-only" style="display:none;">Type an activity</label>
+                <input type="text" id="user-input" placeholder="Type an activity or ask for tips..." autocomplete="off" required>
+                <button type="submit" id="send-btn" aria-label="Send Message">Send</button>
+            </form>
+        </main>
+    </div>
+    
+    <!-- Core logic script -->
+    <script src="script.js"></script>
+</body>
+</html>
