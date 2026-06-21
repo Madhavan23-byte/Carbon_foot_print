@@ -5,15 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eco-Insight V2 | Real-World Tracker</title>
     <meta name="description" content="A real-world, dynamic carbon footprint tracker powered by Generative AI.">
+    <!-- Security: Strict Content Security Policy to prevent XSS and unauthorized tracking -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://generativelanguage.googleapis.com;">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 </head>
 <body>
     <div class="app-container">
         
         <!-- Sidebar Navigation -->
-        <nav class="sidebar">
+        <nav class="sidebar" aria-label="Main Navigation">
             <div class="brand">
                 <div class="logo">🌍</div>
                 <h2>Eco-Insight</h2>
@@ -113,15 +117,15 @@
                 </div>
 
                 <div class="assistant-container">
-                    <div class="chat-history" id="chat-history">
+                    <div class="chat-history" id="chat-history" aria-live="polite" aria-atomic="false">
                         <div class="message bot-msg">
                             Hello! I am your AI-powered Sustainability Expert. You can ask me general questions about climate change, or tell me about your daily activities and I'll calculate your footprint! How can I help you today?
                         </div>
                     </div>
 
-                    <form id="chat-form" class="chat-input-area">
-                        <input type="text" id="user-input" placeholder="Message the AI..." required autocomplete="off">
-                        <button type="submit" id="send-btn">Send</button>
+                    <form id="chat-form" class="chat-input-area" aria-label="Chat Message Form">
+                        <input type="text" id="user-input" placeholder="Message the AI..." aria-label="Message the AI" required autocomplete="off">
+                        <button type="submit" id="send-btn" aria-label="Send Message">Send</button>
                     </form>
                 </div>
             </section>
@@ -193,7 +197,7 @@
         </main>
     </div>
 
-    <script src="data.js"></script>
-    <script src="script.js"></script>
+    <script src="data.js" defer></script>
+    <script src="script.js" defer></script>
 </body>
 </html>

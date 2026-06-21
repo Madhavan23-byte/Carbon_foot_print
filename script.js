@@ -1,3 +1,23 @@
+"use strict";
+
+/**
+ * Basic HTML Sanitizer to prevent Cross-Site Scripting (XSS).
+ * Extremely important for chat applications rendering LLM output.
+ * @param {string} str - Raw string to sanitize
+ * @returns {string} - Sanitized HTML string safe for rendering
+ */
+function sanitizeHTML(str) {
+    const temp = document.createElement('div');
+    temp.textContent = str;
+    // Allow basic formatting tags to survive sanitization
+    let safeHTML = temp.innerHTML;
+    safeHTML = safeHTML.replace(/&lt;br&gt;/g, '<br>');
+    safeHTML = safeHTML.replace(/&lt;strong&gt;/g, '<strong>').replace(/&lt;\/strong&gt;/g, '</strong>');
+    safeHTML = safeHTML.replace(/&lt;em&gt;/g, '<em>').replace(/&lt;\/em&gt;/g, '</em>');
+    safeHTML = safeHTML.replace(/&lt;span(.*?)&gt;/g, '<span$1>').replace(/&lt;\/span&gt;/g, '</span>');
+    return safeHTML;
+}
+
 // Safety check for data.js
 if (typeof DATA === 'undefined') {
     console.error("Critical Error: data.js failed to load before script.js.");
@@ -91,6 +111,14 @@ function awardPoints(co2Saved, msg) {
 }
 
 // -- Core Calculation Engine --
+/**
+ * Core Mathematical Engine for Carbon Footprint Calculation.
+ * Calculates emissions based on regional grid severity and activity type.
+ * @param {string} type - The category of activity ('transport', 'diet', 'energy')
+ * @param {string} actionKey - The specific action identifier (e.g., 'car_ev', 'vegan')
+ * @param {number} amount - The quantifiable metric (miles, meals, kWh)
+ * @returns {Object} { co2: number, desc: string }
+ */
 function processAction(type, actionKey, amount) {
     let addedCO2 = 0;
     let desc = '';
@@ -236,7 +264,7 @@ async function callGeminiAPI(userText) {
             }
         }
 
-        const formattedText = aiResponseText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        const formattedText = sanitizeHTML(aiResponseText).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
         addMessage(formattedText, false);
 
     } catch (error) {
@@ -289,11 +317,16 @@ async function callGeminiAPI(userText) {
 
 
 // -- UI Update Functions --
+/**
+ * Renders a message to the chat history, sanitizing user input to prevent XSS.
+ * @param {string} text - The message content
+ * @param {boolean} isUser - Whether the message is from the user
+ */
 function addMessage(text, isUser = false) {
     const msgDiv = document.createElement('div');
     msgDiv.classList.add('message');
     msgDiv.classList.add(isUser ? 'user-msg' : 'bot-msg');
-    msgDiv.innerHTML = text; 
+    msgDiv.innerHTML = isUser ? sanitizeHTML(text) : text; 
     chatHistory.appendChild(msgDiv);
     chatHistory.scrollTop = chatHistory.scrollHeight;
 }

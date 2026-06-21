@@ -1,0 +1,12 @@
+{
+  "name": "eco-insight",
+  "version": "2.0.0",
+  "description": "Eco-Insight Carbon Tracker - Dual Engine AI",
+  "main": "script.js",
+  "scripts": {
+    "test": "node tests/run_tests.js"
+  },
+  "keywords": ["hackathon", "sustainability", "ai"],
+  "author": "Madhavan23-byte",
+  "license": "MIT"
+}
