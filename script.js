@@ -195,11 +195,11 @@ async function callGeminiAPI(userText) {
     chatHistory.scrollTop = chatHistory.scrollHeight;
 
     // Build context
-    aiChatContext.push({ role: "user", parts: [{ text: userText }] });
+    const tempContext = [...aiChatContext, { role: "user", parts: [{ text: userText }] }];
 
     const payload = {
-        system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-        contents: aiChatContext
+        systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+        contents: tempContext
     };
 
     try {
@@ -209,12 +209,16 @@ async function callGeminiAPI(userText) {
             body: JSON.stringify(payload)
         });
 
-        if (!response.ok) throw new Error("API request failed. Is your API Key correct?");
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error?.message || "API request failed. Check API Key.");
+        }
 
         const data = await response.json();
         let aiResponseText = data.candidates[0].content.parts[0].text;
         
-        // Save to context
+        // Save to context only on success
+        aiChatContext = tempContext;
         aiChatContext.push({ role: "model", parts: [{ text: aiResponseText }] });
 
         document.getElementById(loadingId).remove();
