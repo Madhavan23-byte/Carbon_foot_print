@@ -6,24 +6,24 @@ if (typeof DATA === 'undefined') {
 
 const STATE_KEY = 'eco_insight_v2_state';
 
-// V2 Default State
+// V2 Default State (Now includes apiKey)
 const DEFAULT_STATE = {
     settings: {
-        region: 'US', // Default to US baseline
-        primaryTransport: 'car_gas_average'
+        region: 'US', 
+        primaryTransport: 'car_gas_average',
+        apiKey: ''
     },
     totalCO2: 0,
     points: 0,
     categories: { transport: 0, food: 0, energy: 0 },
-    history: [] // { id, date, type, action, co2, description }
+    history: [] 
 };
 
 // State Initialization and Migration
 let state = JSON.parse(localStorage.getItem(STATE_KEY)) || DEFAULT_STATE;
-if(!state.settings) { 
-    state = DEFAULT_STATE; 
-    localStorage.setItem(STATE_KEY, JSON.stringify(state)); 
-}
+if(!state.settings) { state = DEFAULT_STATE; }
+if(state.settings.apiKey === undefined) state.settings.apiKey = ''; // migration safety
+saveState();
 
 // -- DOM Elements Selection --
 const navLinks = document.querySelectorAll('.nav-links li');
@@ -39,9 +39,10 @@ const elRankProgress = document.getElementById('rank-progress');
 const chatHistory = document.getElementById('chat-history');
 const chatForm = document.getElementById('chat-form');
 const userInput = document.getElementById('user-input');
-const actionBtns = document.querySelectorAll('.action-btn');
 const selRegion = document.getElementById('region-select');
 const selTransport = document.getElementById('primary-transport');
+const elApiKey = document.getElementById('api-key');
+const elApiWarning = document.getElementById('api-warning');
 const btnSaveSettings = document.getElementById('save-settings-btn');
 const btnHardReset = document.getElementById('hard-reset-btn');
 
@@ -49,19 +50,18 @@ const btnHardReset = document.getElementById('hard-reset-btn');
 let doughnutChartInst = null;
 let trendChartInst = null;
 
+// Chat History Context for LLM
+let aiChatContext = [];
+
 // -- SPA Routing Engine --
 navLinks.forEach(link => {
     link.addEventListener('click', () => {
-        // Handle Active states
         navLinks.forEach(l => l.classList.remove('active'));
         link.classList.add('active');
-        
-        // Handle View toggling
         const target = link.getAttribute('data-target');
         views.forEach(v => v.classList.remove('active-view'));
         document.getElementById(target).classList.add('active-view');
         
-        // Lazy-render charts to prevent sizing bugs when display is none
         if(target === 'dashboard-view') renderDashboardCharts();
         if(target === 'analytics-view') renderAnalyticsChart();
     });
@@ -83,29 +83,25 @@ function updateGamification() {
 
 function awardPoints(co2Saved, msg) {
     if (co2Saved > 0) {
-        const pts = Math.floor(co2Saved * 15); // Multiplier for psychological reward
+        const pts = Math.floor(co2Saved * 15);
         state.points += pts;
-        addMessage(`🌟 <strong>Achievement!</strong> You earned ${pts} Eco-Points for ${msg}!`);
         updateGamification();
     }
 }
 
-// -- Core Calculation Engine (V2 using data.js) --
+// -- Core Calculation Engine --
 function processAction(type, actionKey, amount) {
     let addedCO2 = 0;
     let desc = '';
     let category = type; 
     
-    // Grid modifier based on Geographic Region setting
     const regionalGridModifier = DATA.regions[state.settings.region].grid_kwh;
 
     if (type === 'transport') {
         const factor = DATA.transport[actionKey].co2_per_mile;
-        
         if (actionKey === 'car_ev') {
-            // EV calculation: Miles * kWh per mile * Regional Grid Emission
             addedCO2 = amount * 0.3 * regionalGridModifier;
-            awardPoints(amount * (DATA.transport.car_gas_average.co2_per_mile - (0.3 * regionalGridModifier)), "Choosing an EV over a Gas Car");
+            awardPoints(amount * (DATA.transport.car_gas_average.co2_per_mile - (0.3 * regionalGridModifier)), "Choosing an EV");
         } else {
             addedCO2 = amount * factor;
             if (actionKey === 'bus' || actionKey === 'train' || actionKey === 'bike') {
@@ -127,11 +123,9 @@ function processAction(type, actionKey, amount) {
         desc = `${amount} kWh Grid Energy (${DATA.regions[state.settings.region].name})`;
     }
 
-    // Update Global State
     state.totalCO2 += addedCO2;
     state.categories[category] += addedCO2;
     
-    // Log history array
     const logEntry = {
         id: Date.now(),
         date: new Date().toLocaleDateString(),
@@ -141,76 +135,125 @@ function processAction(type, actionKey, amount) {
         description: desc
     };
     state.history.unshift(logEntry);
-    if(state.history.length > 50) state.history.pop(); // Cap history to 50 items
+    if(state.history.length > 50) state.history.pop();
     
     saveState();
     updateUI();
-    if (document.getElementById('dashboard-view').classList.contains('active-view')) {
-        renderDashboardCharts();
-    }
+    if (document.getElementById('dashboard-view').classList.contains('active-view')) renderDashboardCharts();
     
     return { co2: addedCO2, desc: desc };
 }
 
-// -- AI Assistant NLP Parser & Conversational Engine --
-function parseText(text) {
-    const txt = text.toLowerCase();
-    
-    // 1. Conversational Chit-Chat & QA Dictionary
-    const qaMap = [
-        { regex: /\b(hi|hello|hey|yo|namaste|vanakkam)\b/i, reply: "Hello! I'm Eco-Insight, your personal sustainability assistant. You can log activities here or ask me questions about carbon footprints!" },
-        { regex: /how are you/i, reply: "I'm doing great! My servers run on renewable energy. How can I help you lower your carbon footprint today?" },
-        { regex: /who are you|what are you/i, reply: "I am an intelligent assistant built to help you track, understand, and reduce your carbon footprint through simple actions." },
-        { regex: /what is (a )?carbon footprint/i, reply: "A carbon footprint is the total amount of greenhouse gases (including carbon dioxide and methane) that are generated by our actions." },
-        { regex: /why( is)? meat/i, reply: "Meat production, especially beef, requires massive amounts of land and water, and cows release methane—a potent greenhouse gas. Switching to plant-based meals drastically reduces this impact!" },
-        { regex: /why( is)? ev|electric vehicle/i, reply: "Electric Vehicles (EVs) don't have tailpipe emissions. However, their true footprint depends on your local power grid (whether it's powered by coal or renewables). You can set your region in the Settings tab!" },
-        { regex: /thank/i, reply: "You're very welcome! Keep making green choices. 🌍" },
-        { regex: /help/i, reply: "I can help you log activities! Try saying 'I drove 15 miles' or 'I ate a vegan meal', or ask me a question like 'What is a carbon footprint?'" }
-    ];
 
-    // Check conversational intents first
-    for (let qa of qaMap) {
-        if (qa.regex.test(txt)) {
-            setTimeout(() => addMessage(qa.reply), 600);
-            return;
+// ==========================================
+// THE DYNAMIC AI ENGINE (ChatGPT Logic)
+// ==========================================
+
+const SYSTEM_INSTRUCTION = `You are Eco-Insight, a highly intelligent, conversational sustainability assistant. 
+Your primary goal is to help users track and reduce their carbon footprint.
+Behave like a professional ChatGPT-style assistant. You are friendly, engaging, and highly knowledgeable about climate change.
+
+BEHAVIOR RULES:
+1. If the user asks a general question (e.g. "What is a carbon footprint?", "How do EVs work?"), answer them comprehensively but concisely.
+2. If the user mentions an activity but it is vague (e.g., "I drove today"), YOU MUST ASK clarifying questions (e.g., "How many miles did you drive, and what type of vehicle do you use?").
+3. ONLY when you have enough specific information to calculate an activity (Type, Specific Action, and Amount), you must respond conversationally acknowledging the activity, AND THEN append a strict JSON block at the very end of your message.
+
+JSON FORMAT INSTRUCTION:
+If you are logging an action, append exactly this format at the end of your text:
+\`\`\`json
+{"action": "log", "type": "<TYPE>", "actionKey": "<ACTION_KEY>", "amount": <NUMBER>}
+\`\`\`
+
+VALID MAPPINGS FOR JSON:
+- <TYPE> must be exactly one of: 'transport', 'diet', 'energy'
+- <ACTION_KEY> must be exactly one of the following based on the type:
+  - For transport: 'car_gas_average', 'car_suv', 'car_ev', 'bus', 'train', 'flight_short', 'bike'
+  - For diet: 'meat_heavy', 'average', 'vegetarian', 'vegan'
+  - For energy: 'electricity' (amount must be in kWh)
+
+Example User: "I drove 15 miles in my EV."
+Example Assistant: "That's great you are driving an EV! I've logged your 15-mile commute. It produces significantly less CO2 than a gas car based on your regional grid.
+\`\`\`json
+{"action": "log", "type": "transport", "actionKey": "car_ev", "amount": 15}
+\`\`\`"
+
+Do NOT output the JSON block unless you are actively logging an action.`;
+
+async function callGeminiAPI(userText) {
+    if (!state.settings.apiKey) {
+        addMessage("⚠️ I cannot connect to my AI brain. Please provide your Gemini API Key in the Settings tab.", false);
+        return;
+    }
+
+    // Add loading indicator
+    const loadingId = 'loading-' + Date.now();
+    const loadingDiv = document.createElement('div');
+    loadingDiv.classList.add('message', 'bot-msg');
+    loadingDiv.id = loadingId;
+    loadingDiv.innerHTML = "<em>Analyzing context...</em>";
+    chatHistory.appendChild(loadingDiv);
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+
+    // Build context
+    aiChatContext.push({ role: "user", parts: [{ text: userText }] });
+
+    const payload = {
+        system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+        contents: aiChatContext
+    };
+
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.settings.apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error("API request failed. Is your API Key correct?");
+
+        const data = await response.json();
+        let aiResponseText = data.candidates[0].content.parts[0].text;
+        
+        // Save to context
+        aiChatContext.push({ role: "model", parts: [{ text: aiResponseText }] });
+
+        document.getElementById(loadingId).remove();
+
+        // Regex to intercept JSON block
+        const jsonMatch = aiResponseText.match(/```json\n([\s\S]*?)\n```/);
+        if (jsonMatch) {
+            try {
+                const actionData = JSON.parse(jsonMatch[1]);
+                if (actionData.action === 'log') {
+                    // Trigger Internal JS Math Engine!
+                    const res = processAction(actionData.type, actionData.actionKey, actionData.amount);
+                    // Remove JSON from the chat message UI
+                    aiResponseText = aiResponseText.replace(jsonMatch[0], '').trim();
+                    // Append a visual confirmation badge to the message
+                    aiResponseText += `<br><br><span style="background:var(--primary); color:#000; padding:2px 8px; border-radius:8px; font-size:0.8rem; font-weight:bold;">SYSTEM LOG: Added ${res.co2.toFixed(2)} kg CO₂</span>`;
+                }
+            } catch (e) {
+                console.error("AI returned malformed JSON", e);
+            }
         }
-    }
 
-    // 2. Activity Logging Parsing
-    if (txt.includes('mile') || txt.includes('drive') || txt.includes('drove') || txt.includes('km')) {
-        let match = txt.match(/(\d+)\s*(mile|km)/);
-        let dist = match ? parseFloat(match[1]) : 10;
-        if (match && match[2] === 'km') dist = dist * 0.621371; // convert km to miles
-        
-        let action = state.settings.primaryTransport; // Use customized user setting
-        if (txt.includes('bus')) action = 'bus';
-        if (txt.includes('ev') || txt.includes('electric')) action = 'car_ev';
-        if (txt.includes('bike') || txt.includes('walk')) action = 'bike';
-        if (txt.includes('flight') || txt.includes('fly')) action = 'flight_short';
-        
-        let result = processAction('transport', action, dist);
-        setTimeout(() => addMessage(`Got it! ${result.desc} added <strong>${result.co2.toFixed(2)} kg CO₂</strong>.`), 600);
-    } 
-    else if (txt.includes('meal') || txt.includes('ate') || txt.includes('eat') || txt.includes('food')) {
-        let action = 'average';
-        if (txt.includes('meat') || txt.includes('beef') || txt.includes('steak')) action = 'meat_heavy';
-        if (txt.includes('vegan') || txt.includes('plant')) action = 'vegan';
-        if (txt.includes('vegetarian') || txt.includes('paneer')) action = 'vegetarian';
-        
-        let result = processAction('diet', action, 1);
-        setTimeout(() => addMessage(`Logged. ${result.desc} added <strong>${result.co2.toFixed(2)} kg CO₂</strong>.`), 600);
-    }
-    else {
-        setTimeout(() => addMessage(`I didn't quite catch that. You can tell me what you did today (like "I drove my EV 20 miles"), or ask me a general question about sustainability!`), 600);
+        // Convert basic markdown asterisks to bold tags for UI formatting
+        const formattedText = aiResponseText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        addMessage(formattedText, false);
+
+    } catch (error) {
+        document.getElementById(loadingId).remove();
+        addMessage("⚠️ <strong>Connection Error:</strong> " + error.message, false);
     }
 }
+
 
 // -- UI Update Functions --
 function addMessage(text, isUser = false) {
     const msgDiv = document.createElement('div');
     msgDiv.classList.add('message');
     msgDiv.classList.add(isUser ? 'user-msg' : 'bot-msg');
-    msgDiv.innerHTML = text; // Allow basic HTML (bolding)
+    msgDiv.innerHTML = text; 
     chatHistory.appendChild(msgDiv);
     chatHistory.scrollTop = chatHistory.scrollHeight;
 }
@@ -234,7 +277,13 @@ function updateUI() {
     
     updateGamification();
     
-    // Dynamic AI Insights Generator
+    // API Key UI Warning
+    if(!state.settings.apiKey) {
+        elApiWarning.style.display = 'flex';
+    } else {
+        elApiWarning.style.display = 'none';
+    }
+
     const insightText = document.getElementById('ai-insight-text');
     if (state.history.length >= 3) {
         let highestCat = 'transport';
@@ -242,10 +291,6 @@ function updateUI() {
         if (state.categories.energy > state.categories[highestCat]) highestCat = 'energy';
         
         let insightMsg = `Your highest emission category is currently <strong>${highestCat.toUpperCase()}</strong>. Focus your reduction efforts here! `;
-        if (highestCat === 'transport') insightMsg += "Try carpooling or switching your Settings to 'Electric Vehicle'.";
-        if (highestCat === 'food') insightMsg += "Swapping just one meat meal a day for plant-based saves massive amounts of CO2.";
-        if (highestCat === 'energy') insightMsg += `Because you are in the <strong>${state.settings.region}</strong> region, unplugging unused devices is critical.`;
-        
         insightText.innerHTML = insightMsg;
     }
 }
@@ -288,14 +333,13 @@ function renderAnalyticsChart() {
     if(!ctx) return;
     if(trendChartInst) trendChartInst.destroy();
     
-    // Group history by date
     const dates = {};
     [...state.history].reverse().forEach(h => {
         if(!dates[h.date]) dates[h.date] = 0;
         dates[h.date] += h.co2;
     });
     
-    const labels = Object.keys(dates).slice(-7); // Last 7 active days
+    const labels = Object.keys(dates).slice(-7); 
     const data = labels.map(l => dates[l]);
     
     trendChartInst = new Chart(ctx, {
@@ -324,24 +368,13 @@ function renderAnalyticsChart() {
 }
 
 // -- Event Listeners --
-actionBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        const type = btn.getAttribute('data-type');
-        const action = btn.getAttribute('data-action');
-        const amount = parseFloat(btn.getAttribute('data-amount'));
-        
-        addMessage(btn.innerText, true);
-        const res = processAction(type, action, amount);
-        setTimeout(() => addMessage(`Logged! Added ${res.co2.toFixed(2)} kg CO₂ from ${res.desc}.`), 400);
-    });
-});
-
 chatForm.addEventListener('submit', e => {
     e.preventDefault();
     const txt = userInput.value.trim();
     if(!txt) return;
+    
     addMessage(txt, true);
-    parseText(txt);
+    callGeminiAPI(txt); // Call the dynamic LLM!
     userInput.value = '';
 });
 
@@ -349,16 +382,18 @@ chatForm.addEventListener('submit', e => {
 function loadSettingsUI() {
     selRegion.value = state.settings.region;
     selTransport.value = state.settings.primaryTransport;
+    elApiKey.value = state.settings.apiKey;
 }
 
 btnSaveSettings.addEventListener('click', () => {
     state.settings.region = selRegion.value;
     state.settings.primaryTransport = selTransport.value;
+    state.settings.apiKey = elApiKey.value.trim();
     saveState();
+    updateUI();
     
-    // Notify in Assistant
-    navLinks[1].click(); // switch to assistant
-    addMessage(`⚙️ Configuration Updated! Future energy logic will use the <strong>${state.settings.region}</strong> grid, and default transport is now <strong>${selTransport.options[selTransport.selectedIndex].text}</strong>.`);
+    navLinks[1].click(); 
+    addMessage(`⚙️ Configuration Updated! The AI Assistant is now synced with your settings and API key.`);
 });
 
 btnHardReset.addEventListener('click', () => {

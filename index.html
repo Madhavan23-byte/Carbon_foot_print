@@ -4,11 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eco-Insight V2 | Real-World Tracker</title>
-    <meta name="description" content="A real-world, dynamic carbon footprint tracker with multi-region support and visual analytics.">
+    <meta name="description" content="A real-world, dynamic carbon footprint tracker powered by Generative AI.">
     <link rel="stylesheet" href="style.css">
-    <!-- Premium Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <!-- Chart.js for Visual Analytics (CDN to keep repo size tiny) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -103,29 +101,26 @@
             <!-- Assistant View -->
             <section id="assistant-view" class="view">
                 <header class="view-header">
-                    <h1>Smart Assistant</h1>
-                    <p>Log activities via quick actions or natural language.</p>
+                    <h1>True AI Assistant</h1>
+                    <p>Powered by Generative AI. Talk to me like a real person!</p>
                 </header>
                 
+                <div id="api-warning" class="danger-zone" style="display:none; padding:15px; margin-bottom:20px; flex-direction:row; justify-content:space-between;">
+                    <div>
+                        <strong style="color:var(--danger)">⚠️ AI Offline: API Key Missing!</strong>
+                        <p style="margin:5px 0 0 0; color:var(--text-secondary); font-size:0.9rem;">Please enter your Gemini API Key in the Settings tab to enable the dynamic AI chat.</p>
+                    </div>
+                </div>
+
                 <div class="assistant-container">
                     <div class="chat-history" id="chat-history">
                         <div class="message bot-msg">
-                            Hello! I'm your V2 Assistant. I use your configured Region and Primary Transport settings to ensure 100% accurate real-world calculations. What did you do today?
+                            Hello! I am your AI-powered Sustainability Expert. You can ask me general questions about climate change, or tell me about your daily activities and I'll calculate your footprint! How can I help you today?
                         </div>
-                    </div>
-                    
-                    <!-- V2 Quick Action Wizard -->
-                    <div class="quick-actions">
-                        <button class="action-btn" data-type="transport" data-action="car_gas_average" data-amount="10">🚗 Drove Gas Car (10m)</button>
-                        <button class="action-btn" data-type="transport" data-action="car_ev" data-amount="10">⚡ Drove EV (10m)</button>
-                        <button class="action-btn" data-type="transport" data-action="bus" data-amount="10">🚌 Took Bus (10m)</button>
-                        <button class="action-btn" data-type="diet" data-action="meat_heavy" data-amount="1">🥩 Meat Meal</button>
-                        <button class="action-btn" data-type="diet" data-action="vegan" data-amount="1">🥗 Vegan Meal</button>
-                        <button class="action-btn" data-type="energy" data-action="electricity" data-amount="5">💡 5 kWh Grid Energy</button>
                     </div>
 
                     <form id="chat-form" class="chat-input-area">
-                        <input type="text" id="user-input" placeholder="E.g., 'I drove my SUV 20 miles'" required autocomplete="off">
+                        <input type="text" id="user-input" placeholder="Message the AI..." required autocomplete="off">
                         <button type="submit" id="send-btn">Send</button>
                     </form>
                 </div>
@@ -144,18 +139,24 @@
 
                 <div class="insights-panel">
                     <h3>💡 AI Insight Engine</h3>
-                    <p id="ai-insight-text">Keep logging data! The AI needs at least 3 activities to generate personalized trend analysis and reduction strategies.</p>
+                    <p id="ai-insight-text">Keep logging data! The engine needs at least 3 activities to generate personalized trend analysis.</p>
                 </div>
             </section>
 
             <!-- Settings View -->
             <section id="settings-view" class="view">
                 <header class="view-header">
-                    <h1>Localization Settings</h1>
-                    <p>Tune the engine to your physical environment for accurate math.</p>
+                    <h1>Localization & API Settings</h1>
+                    <p>Configure your environment and connect your LLM.</p>
                 </header>
                 
                 <form id="settings-form" class="settings-card">
+                    <div class="form-group" style="border:1px solid rgba(59, 130, 246, 0.4); background:rgba(59, 130, 246, 0.05); padding:20px; border-radius:16px;">
+                        <label for="api-key" style="color:var(--secondary)">Gemini API Key (Required for AI Assistant)</label>
+                        <input type="password" id="api-key" placeholder="Paste your API Key here" style="background:rgba(0,0,0,0.5); border:1px solid var(--border-color); color:white; padding:16px; border-radius:14px; outline:none; font-family:'Outfit'; font-size:1.05rem; margin-top:10px; width:100%;">
+                        <small style="color:var(--text-secondary); margin-top:10px; display:block;">Your key is securely encrypted in your browser's localStorage. It never touches our servers.</small>
+                    </div>
+
                     <div class="form-group">
                         <label for="region-select">Geographic Region (Calculates Grid Emission Severity)</label>
                         <select id="region-select">
@@ -167,7 +168,7 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="primary-transport">Primary Transport (Used for text parsing defaults)</label>
+                        <label for="primary-transport">Primary Transport (Used for AI Context)</label>
                         <select id="primary-transport">
                             <option value="car_gas_average">Average Gas Car</option>
                             <option value="car_suv">SUV (Gas)</option>
@@ -181,8 +182,10 @@
                 </form>
 
                 <div class="danger-zone">
-                    <h3>Danger Zone</h3>
-                    <p>This will permanently erase all your historical footprint data and reset your Eco-Points.</p>
+                    <div>
+                        <h3>Danger Zone</h3>
+                        <p>This will permanently erase all your historical footprint data.</p>
+                    </div>
                     <button type="button" id="hard-reset-btn" class="danger-btn">Erase All Data</button>
                 </div>
             </section>
