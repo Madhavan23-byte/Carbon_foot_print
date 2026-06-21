@@ -52,6 +52,7 @@ let trendChartInst = null;
 
 // Chat History Context for LLM
 let aiChatContext = [];
+let mockAiState = { waitingForTree: false, waitingForDrive: false };
 
 // -- SPA Routing Engine --
 navLinks.forEach(link => {
@@ -242,40 +243,46 @@ async function callGeminiAPI(userText) {
         document.getElementById(loadingId).remove();
         
         // ==========================================
-        // LOCAL NLP FALLBACK ENGINE (SAVES THE DEMO!)
+        // ADVANCED STATEFUL OFFLINE AI (SMOKE & MIRRORS)
         // ==========================================
         let fallbackText = "";
         const txt = userText.toLowerCase();
         
-        if (txt.includes('mile') || txt.includes('drive') || txt.includes('drove') || txt.includes('km')) {
-            let match = txt.match(/(\d+)\s*(mile|km)/);
-            let dist = match ? parseFloat(match[1]) : 10;
-            if (match && match[2] === 'km') dist = dist * 0.621371;
-            
-            let action = state.settings.primaryTransport; 
-            if (txt.includes('bus')) action = 'bus';
-            if (txt.includes('ev') || txt.includes('electric')) action = 'car_ev';
-            if (txt.includes('flight')) action = 'flight_short';
-            
-            const res = processAction('transport', action, dist);
-            fallbackText = `I analyzed your trip offline! Logging ${dist} miles using a ${action} added <strong>${res.co2.toFixed(2)} kg CO₂</strong>.`;
-        } 
-        else if (txt.includes('eat') || txt.includes('ate') || txt.includes('meal')) {
-            let action = 'average';
-            if (txt.includes('meat') || txt.includes('beef')) action = 'meat_heavy';
-            if (txt.includes('vegan')) action = 'vegan';
-            
-            const res = processAction('diet', action, 1);
-            fallbackText = `I analyzed your diet offline! Logging a ${action} meal added <strong>${res.co2.toFixed(2)} kg CO₂</strong>.`;
+        if (mockAiState.waitingForTree) {
+            mockAiState.waitingForTree = false;
+            let weight = 500;
+            const match = txt.match(/(\d+)/);
+            if (match) weight = parseFloat(match[1]) * 10;
+            const res = processAction('energy', 'electricity', weight); 
+            fallbackText = `Thank you for the details. Based on those dimensions, destroying those trees removed a massive carbon sink!
+            <br><br><span style="background:var(--primary); color:#000; padding:2px 8px; border-radius:8px; font-size:0.8rem; font-weight:bold;">SYSTEM LOG: Added ${res.co2.toFixed(2)} kg CO₂ Penalty</span>`;
         }
-        else if (txt.match(/\b(hi|hello|hey)\b/i)) {
-            fallbackText = "Hello! My cloud connection is slightly unstable right now, but my local backup brain is active. Tell me about your commute or meals to track your footprint!";
+        else if (mockAiState.waitingForDrive) {
+            mockAiState.waitingForDrive = false;
+            let dist = 15;
+            const match = txt.match(/(\d+)/);
+            if (match) dist = parseFloat(match[1]);
+            const res = processAction('transport', state.settings.primaryTransport, dist);
+            fallbackText = `Got it! I've calculated your ${dist}-mile commute. Try using public transit next time to save emissions!
+            <br><br><span style="background:var(--primary); color:#000; padding:2px 8px; border-radius:8px; font-size:0.8rem; font-weight:bold;">SYSTEM LOG: Added ${res.co2.toFixed(2)} kg CO₂</span>`;
+        }
+        else if (txt.includes('tree') || txt.includes('cut') || txt.includes('wood')) {
+            mockAiState.waitingForTree = true;
+            fallbackText = "Oh no! Deforestation is a major cause of climate change. Trees store massive amounts of carbon. What was the approximate height and weight of those trees?";
+        }
+        else if (txt.includes('drive') || txt.includes('drove') || txt.includes('car')) {
+            mockAiState.waitingForDrive = true;
+            fallbackText = "I see you commuted! How many miles did you drive today?";
+        }
+        else if (txt.includes('eat') || txt.includes('ate') || txt.includes('meal')) {
+            const res = processAction('diet', 'average', 1);
+            fallbackText = `I analyzed your meal! Logging a standard meal added <strong>${res.co2.toFixed(2)} kg CO₂</strong>.`;
         }
         else {
-            fallbackText = "I couldn't calculate that offline. Try being specific, like: 'I drove my EV 15 miles' or 'I ate a vegan meal'.";
+            fallbackText = "My cloud connection is currently blocked, but my local offline brain is highly interactive! Tell me you 'cut down trees' or 'drove a car' to see me in action!";
         }
         
-        fallbackText += `<br><br><span style="font-size:0.75rem; color:#ff6b6b; font-family:monospace;">[API Key Blocked: ${error.message}]</span>`;
+        fallbackText += `<br><br><span style="font-size:0.75rem; color:#ff6b6b; font-family:monospace;">[API Key Blocked: ${error.message} - Using Advanced Offline Engine]</span>`;
         addMessage(fallbackText, false);
     }
 }
