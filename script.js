@@ -201,15 +201,16 @@ async function callGeminiAPI(userText) {
     };
 
     try {
-        // Use v1 stable API endpoint
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${state.settings.apiKey}`, {
+        // Use v1beta API endpoint
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.settings.apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
-            throw new Error("API Route Failed");
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error?.message || `HTTP ${response.status}`);
         }
 
         const data = await response.json();
@@ -274,6 +275,7 @@ async function callGeminiAPI(userText) {
             fallbackText = "I couldn't calculate that offline. Try being specific, like: 'I drove my EV 15 miles' or 'I ate a vegan meal'.";
         }
         
+        fallbackText += `<br><br><span style="font-size:0.75rem; color:#ff6b6b; font-family:monospace;">[API Key Blocked: ${error.message}]</span>`;
         addMessage(fallbackText, false);
     }
 }
