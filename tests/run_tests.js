@@ -21,7 +21,13 @@ global.document = {
         appendChild: () => {}
     }),
     querySelectorAll: () => ({ forEach: () => {} }),
-    createElement: () => ({ classList: { add: ()=>{} }, appendChild: ()=>{} })
+    createElement: () => ({ 
+        classList: { add: ()=>{} }, 
+        appendChild: ()=>{},
+        textContent: '',
+        get innerHTML() { return this.textContent || ''; },
+        set innerHTML(val) { this.textContent = val; }
+    })
 };
 global.alert = () => {};
 
@@ -37,6 +43,7 @@ try {
                                     .replace(/let state =/g, 'var state =')
                                     .replace(/let mockAiState =/g, 'var mockAiState =')
                                     .replace(/let aiChatContext =/g, 'var aiChatContext =')
+                                    .replace(/const chatHistory =/g, 'var chatHistory =')
                                     .replace(/new Chart\(/g, 'new Object(');
     eval(scriptCleaned);
 } catch (e) {
@@ -77,8 +84,6 @@ runTest("Mathematical Engine: EV Calculation", () => {
 
 runTest("Gamification Engine: Vegan Diet Points", () => {
     state.points = 0; 
-    // Average meal = 2.5 kg CO2. Vegan = 1.0 kg CO2.
-    // Saved = 1.5 kg. Points = 1.5 * 15 = 22 pts.
     processAction('diet', 'vegan', 1);
     assert.ok(state.points > 0, "Points should increase when eating vegan.");
 });
@@ -88,6 +93,21 @@ runTest("State Management: History Logging", () => {
     processAction('energy', 'electricity', 50);
     assert.strictEqual(state.history.length, initialHistoryLength + 1, "History array failed to push new log.");
     assert.strictEqual(state.history[0].type, 'energy', "History log recorded incorrect type.");
+});
+
+runTest("Boundary Integrity: Negative Value Handling", () => {
+    const res = processAction('transport', 'car_gas_average', -15);
+    assert.strictEqual(res.co2, 0, "Negative inputs should be bounded to 0 to prevent logic exploits.");
+});
+
+runTest("UI Engine: DOM Node Rendering", () => {
+    // Inject mock array structure for children
+    chatHistory.children = [];
+    chatHistory.appendChild = function(node) { this.children.push(node); };
+    
+    const initialNodes = chatHistory.children.length;
+    addMessage("Hello World", true);
+    assert.strictEqual(chatHistory.children.length, initialNodes + 1, "addMessage failed to append node to DOM");
 });
 
 // ==========================================

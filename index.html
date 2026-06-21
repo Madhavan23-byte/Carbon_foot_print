@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" integrity="sha512-ZwR1/gSZM3ai6v70Qn7pdA4wbj0hAItbIdkE1tqQ9Qz2GkS1vK2rV/0vGv6Xv5m7wK9+I/w9R/nFj1f3Wp6sJw==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
 </head>
 <body>
     <div class="app-container">
@@ -19,22 +19,22 @@
         <!-- Sidebar Navigation -->
         <nav class="sidebar" aria-label="Main Navigation">
             <div class="brand">
-                <div class="logo">🌍</div>
+                <div class="logo"><span role="img" aria-label="Globe">🌍</span></div>
                 <h2>Eco-Insight</h2>
             </div>
             
             <ul class="nav-links">
                 <li class="active" data-target="dashboard-view">
-                    <span class="icon">📊</span> Dashboard
+                    <span class="icon"><span role="img" aria-label="Bar Chart">📊</span></span> Dashboard
                 </li>
                 <li data-target="assistant-view">
-                    <span class="icon">💬</span> Assistant
+                    <span class="icon"><span role="img" aria-label="Speech Bubble">💬</span></span> Assistant
                 </li>
                 <li data-target="analytics-view">
-                    <span class="icon">📈</span> Analytics
+                    <span class="icon"><span role="img" aria-label="Trend Chart">📈</span></span> Analytics
                 </li>
                 <li data-target="settings-view">
-                    <span class="icon">⚙️</span> Settings
+                    <span class="icon"><span role="img" aria-label="Gear">⚙️</span></span> Settings
                 </li>
             </ul>
 
@@ -71,21 +71,21 @@
 
                     <div class="stats-grid">
                         <div class="stat-card">
-                            <div class="stat-icon transport-icon">🚗</div>
+                            <div class="stat-icon transport-icon"><span role="img" aria-label="Car">🚗</span></div>
                             <div class="stat-info">
                                 <h3>Transport</h3>
                                 <p id="stat-transport">0.0 kg</p>
                             </div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-icon food-icon">🍔</div>
+                            <div class="stat-icon food-icon"><span role="img" aria-label="Burger">🍔</span></div>
                             <div class="stat-info">
                                 <h3>Diet</h3>
                                 <p id="stat-food">0.0 kg</p>
                             </div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-icon energy-icon">⚡</div>
+                            <div class="stat-icon energy-icon"><span role="img" aria-label="Lightning bolt">⚡</span></div>
                             <div class="stat-info">
                                 <h3>Energy</h3>
                                 <p id="stat-energy">0.0 kg</p>

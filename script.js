@@ -120,6 +120,7 @@ function awardPoints(co2Saved, msg) {
  * @returns {Object} { co2: number, desc: string }
  */
 function processAction(type, actionKey, amount) {
+    if (amount < 0) amount = 0; // Boundary security: prevent negative emissions manipulation
     let addedCO2 = 0;
     let desc = '';
     let category = type; 
@@ -369,7 +370,22 @@ function updateUI() {
 }
 
 function saveState() {
-    localStorage.setItem(STATE_KEY, JSON.stringify(state));
+    try {
+        localStorage.setItem('ecoState', JSON.stringify(state));
+    } catch (error) {
+        console.warn("Storage restricted or exceeded.", error);
+    }
+}
+
+function loadState() {
+    try {
+        const saved = localStorage.getItem('ecoState');
+        if (saved) {
+            state = JSON.parse(saved);
+        }
+    } catch (error) {
+        console.warn("Failed to load local state. Starting fresh.", error);
+    }
 }
 
 // -- Chart.js Integration --
