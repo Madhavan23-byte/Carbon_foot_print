@@ -194,16 +194,20 @@ async function callGeminiAPI(userText) {
     chatHistory.appendChild(loadingDiv);
     chatHistory.scrollTop = chatHistory.scrollHeight;
 
-    // Build context
-    const tempContext = [...aiChatContext, { role: "user", parts: [{ text: userText }] }];
+    // Build context for universal gemini-pro
+    const tempContext = [...aiChatContext];
+    if (tempContext.length === 0) {
+        tempContext.push({ role: "user", parts: [{ text: SYSTEM_INSTRUCTION + "\n\nUser Message: " + userText }] });
+    } else {
+        tempContext.push({ role: "user", parts: [{ text: userText }] });
+    }
 
     const payload = {
-        systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
         contents: tempContext
     };
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${state.settings.apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${state.settings.apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
