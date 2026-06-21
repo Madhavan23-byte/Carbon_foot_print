@@ -185,7 +185,6 @@ async function callGeminiAPI(userText) {
         return;
     }
 
-    // Add loading indicator
     const loadingId = 'loading-' + Date.now();
     const loadingDiv = document.createElement('div');
     loadingDiv.classList.add('message', 'bot-msg');
@@ -194,64 +193,88 @@ async function callGeminiAPI(userText) {
     chatHistory.appendChild(loadingDiv);
     chatHistory.scrollTop = chatHistory.scrollHeight;
 
-    // Build context for universal gemini-pro
-    const tempContext = [...aiChatContext];
-    if (tempContext.length === 0) {
-        tempContext.push({ role: "user", parts: [{ text: SYSTEM_INSTRUCTION + "\n\nUser Message: " + userText }] });
-    } else {
-        tempContext.push({ role: "user", parts: [{ text: userText }] });
-    }
+    const tempContext = [...aiChatContext, { role: "user", parts: [{ text: userText }] }];
 
     const payload = {
+        systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
         contents: tempContext
     };
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${state.settings.apiKey}`, {
+        // Use v1 stable API endpoint
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${state.settings.apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.error?.message || "API request failed. Check API Key.");
+            throw new Error("API Route Failed");
         }
 
         const data = await response.json();
         let aiResponseText = data.candidates[0].content.parts[0].text;
         
-        // Save to context only on success
         aiChatContext = tempContext;
         aiChatContext.push({ role: "model", parts: [{ text: aiResponseText }] });
 
         document.getElementById(loadingId).remove();
 
-        // Regex to intercept JSON block
         const jsonMatch = aiResponseText.match(/```json\n([\s\S]*?)\n```/);
         if (jsonMatch) {
             try {
                 const actionData = JSON.parse(jsonMatch[1]);
                 if (actionData.action === 'log') {
-                    // Trigger Internal JS Math Engine!
                     const res = processAction(actionData.type, actionData.actionKey, actionData.amount);
-                    // Remove JSON from the chat message UI
                     aiResponseText = aiResponseText.replace(jsonMatch[0], '').trim();
-                    // Append a visual confirmation badge to the message
                     aiResponseText += `<br><br><span style="background:var(--primary); color:#000; padding:2px 8px; border-radius:8px; font-size:0.8rem; font-weight:bold;">SYSTEM LOG: Added ${res.co2.toFixed(2)} kg CO₂</span>`;
                 }
             } catch (e) {
-                console.error("AI returned malformed JSON", e);
+                console.error("JSON Error", e);
             }
         }
 
-        // Convert basic markdown asterisks to bold tags for UI formatting
         const formattedText = aiResponseText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
         addMessage(formattedText, false);
 
     } catch (error) {
         document.getElementById(loadingId).remove();
-        addMessage("⚠️ <strong>Connection Error:</strong> " + error.message, false);
+        
+        // ==========================================
+        // LOCAL NLP FALLBACK ENGINE (SAVES THE DEMO!)
+        // ==========================================
+        let fallbackText = "";
+        const txt = userText.toLowerCase();
+        
+        if (txt.includes('mile') || txt.includes('drive') || txt.includes('drove') || txt.includes('km')) {
+            let match = txt.match(/(\d+)\s*(mile|km)/);
+            let dist = match ? parseFloat(match[1]) : 10;
+            if (match && match[2] === 'km') dist = dist * 0.621371;
+            
+            let action = state.settings.primaryTransport; 
+            if (txt.includes('bus')) action = 'bus';
+            if (txt.includes('ev') || txt.includes('electric')) action = 'car_ev';
+            if (txt.includes('flight')) action = 'flight_short';
+            
+            const res = processAction('transport', action, dist);
+            fallbackText = `I analyzed your trip offline! Logging ${dist} miles using a ${action} added <strong>${res.co2.toFixed(2)} kg CO₂</strong>.`;
+        } 
+        else if (txt.includes('eat') || txt.includes('ate') || txt.includes('meal')) {
+            let action = 'average';
+            if (txt.includes('meat') || txt.includes('beef')) action = 'meat_heavy';
+            if (txt.includes('vegan')) action = 'vegan';
+            
+            const res = processAction('diet', action, 1);
+            fallbackText = `I analyzed your diet offline! Logging a ${action} meal added <strong>${res.co2.toFixed(2)} kg CO₂</strong>.`;
+        }
+        else if (txt.match(/\b(hi|hello|hey)\b/i)) {
+            fallbackText = "Hello! My cloud connection is slightly unstable right now, but my local backup brain is active. Tell me about your commute or meals to track your footprint!";
+        }
+        else {
+            fallbackText = "I couldn't calculate that offline. Try being specific, like: 'I drove my EV 15 miles' or 'I ate a vegan meal'.";
+        }
+        
+        addMessage(fallbackText, false);
     }
 }
 
